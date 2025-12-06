@@ -32,26 +32,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _handleLogin() async {
+    print('\n================================================');
+    print('[WMS-UI-LOGIN] ${DateTime.now()} | Login button pressed');
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    print('[WMS-UI-LOGIN] ${DateTime.now()} | Email: $email');
+    print(
+        '[WMS-UI-LOGIN] ${DateTime.now()} | Password: ${password.isNotEmpty ? "***" : "(empty)"}');
+
     if (email.isEmpty || password.isEmpty) {
+      print(
+          '[WMS-UI-LOGIN] ${DateTime.now()} | ERROR - Validation failed: Empty fields');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill in all fields'),
           backgroundColor: Colors.red,
         ),
       );
+      print('================================================\n');
       return;
     }
+
+    print('[WMS-UI-LOGIN] ${DateTime.now()} | Validation passed');
+    print('[WMS-UI-LOGIN] ${DateTime.now()} | Calling authProvider.login()...');
 
     final authNotifier = ref.read(authProvider.notifier);
     final success = await authNotifier.login(email, password);
 
+    print(
+        '[WMS-UI-LOGIN] ${DateTime.now()} | Login result: ${success ? "SUCCESS" : "FAILED"}');
+
     if (success && mounted) {
+      print('[WMS-UI-LOGIN] ${DateTime.now()} | SUCCESS - Login successful!');
+      print('[WMS-UI-LOGIN] ${DateTime.now()} | Navigating to /dashboard');
+      print('================================================\n');
       context.go('/dashboard');
     } else if (mounted) {
       final error = ref.read(authProvider).error;
+      print('[WMS-UI-LOGIN] ${DateTime.now()} | ERROR - Login failed: $error');
+      print('================================================\n');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error ?? 'Login failed'),

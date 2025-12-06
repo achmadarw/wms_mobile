@@ -6,7 +6,6 @@ part 'item_model.g.dart';
 class ItemModel {
   final String id;
   final String sku;
-  final String? barcode;
   final String name;
   final String? description;
   final String category;
@@ -15,27 +14,13 @@ class ItemModel {
   final String? dimensions;
   final double unitCost;
   final double? sellingPrice;
-  final int? minStockLevel;
-  final int? maxStockLevel;
-  final int? reorderPoint;
-  final int? reorderQty;
-  final String? manufacturer;
-  final String? supplier;
-  final String? imageUrl;
   final bool active;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  // Calculated fields (from API response with stock info)
-  final int? totalStock;
-  final int? availableStock;
-  final int? reservedStock;
-  final String? stockStatus;
-
   ItemModel({
     required this.id,
     required this.sku,
-    this.barcode,
     required this.name,
     this.description,
     required this.category,
@@ -44,20 +29,9 @@ class ItemModel {
     this.dimensions,
     required this.unitCost,
     this.sellingPrice,
-    this.minStockLevel,
-    this.maxStockLevel,
-    this.reorderPoint,
-    this.reorderQty,
-    this.manufacturer,
-    this.supplier,
-    this.imageUrl,
     this.active = true,
     required this.createdAt,
     required this.updatedAt,
-    this.totalStock,
-    this.availableStock,
-    this.reservedStock,
-    this.stockStatus,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) =>
@@ -68,7 +42,6 @@ class ItemModel {
   ItemModel copyWith({
     String? id,
     String? sku,
-    String? barcode,
     String? name,
     String? description,
     String? category,
@@ -77,25 +50,13 @@ class ItemModel {
     String? dimensions,
     double? unitCost,
     double? sellingPrice,
-    int? minStockLevel,
-    int? maxStockLevel,
-    int? reorderPoint,
-    int? reorderQty,
-    String? manufacturer,
-    String? supplier,
-    String? imageUrl,
     bool? active,
     DateTime? createdAt,
     DateTime? updatedAt,
-    int? totalStock,
-    int? availableStock,
-    int? reservedStock,
-    String? stockStatus,
   }) {
     return ItemModel(
       id: id ?? this.id,
       sku: sku ?? this.sku,
-      barcode: barcode ?? this.barcode,
       name: name ?? this.name,
       description: description ?? this.description,
       category: category ?? this.category,
@@ -104,20 +65,9 @@ class ItemModel {
       dimensions: dimensions ?? this.dimensions,
       unitCost: unitCost ?? this.unitCost,
       sellingPrice: sellingPrice ?? this.sellingPrice,
-      minStockLevel: minStockLevel ?? this.minStockLevel,
-      maxStockLevel: maxStockLevel ?? this.maxStockLevel,
-      reorderPoint: reorderPoint ?? this.reorderPoint,
-      reorderQty: reorderQty ?? this.reorderQty,
-      manufacturer: manufacturer ?? this.manufacturer,
-      supplier: supplier ?? this.supplier,
-      imageUrl: imageUrl ?? this.imageUrl,
       active: active ?? this.active,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      totalStock: totalStock ?? this.totalStock,
-      availableStock: availableStock ?? this.availableStock,
-      reservedStock: reservedStock ?? this.reservedStock,
-      stockStatus: stockStatus ?? this.stockStatus,
     );
   }
 }

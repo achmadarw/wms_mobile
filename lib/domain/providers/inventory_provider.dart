@@ -61,7 +61,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     String? search,
     String? category,
   }) async {
+    print('\n================================================');
+    print('[WMS-PROVIDER] ${DateTime.now()} | fetchItems called');
+    print('[WMS-PROVIDER] ${DateTime.now()} | Page: ${page ?? state.page}');
+    print('[WMS-PROVIDER] ${DateTime.now()} | Search: ${search ?? "none"}');
+    print('[WMS-PROVIDER] ${DateTime.now()} | Category: ${category ?? "none"}');
+
     _initializeService();
+    print('[WMS-PROVIDER] ${DateTime.now()} | Service initialized');
 
     state = state.copyWith(
       isLoading: true,
@@ -69,8 +76,11 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
       page: page ?? state.page,
       searchQuery: search,
     );
+    print('[WMS-PROVIDER] ${DateTime.now()} | State set to loading');
 
     try {
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | Calling inventoryService.getItems()...');
       final items = await _inventoryService.getItems(
         page: page ?? state.page,
         limit: state.limit,
@@ -78,11 +88,26 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         category: category,
       );
 
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | Items received: ${items.length}');
+      if (items.isNotEmpty) {
+        print(
+            '[WMS-PROVIDER] ${DateTime.now()} | First item: ${items[0].sku} - ${items[0].name}');
+      }
+
       state = state.copyWith(
         items: items,
         isLoading: false,
       );
+
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | SUCCESS - Fetch successful! Total items: ${items.length}');
+      print('================================================\n');
     } catch (e) {
+      print('[WMS-PROVIDER] ${DateTime.now()} | ERROR - Fetch failed: $e');
+      print('[WMS-PROVIDER] ${DateTime.now()} | Error type: ${e.runtimeType}');
+      print('================================================\n');
+
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -108,33 +133,44 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
   }
 
   /// Create item
-  Future<bool> createItem({
-    required String sku,
-    required String name,
-    required String category,
-    String? description,
-    String? unitOfMeasure,
-    double? weight,
-    String? dimensions,
-    double? unitCost,
-    double? sellingPrice,
-  }) async {
-    _initializeService();
+  Future<bool> createItem(Map<String, dynamic> itemData) async {
+    print('\n================================================');
+    print('[WMS-PROVIDER] ${DateTime.now()} | createItem called');
+    print(
+        '[WMS-PROVIDER] ${DateTime.now()} | Data: SKU=${itemData['sku']}, Name=${itemData['name']}');
 
-    state = state.copyWith(isLoading: true, error: null);
+    _initializeService();
+    print('[WMS-PROVIDER] ${DateTime.now()} | Service initialized');
+
+    state = state.copyWith(isLoading: true);
+    print('[WMS-PROVIDER] ${DateTime.now()} | State set to loading');
 
     try {
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | Calling inventoryService.createItem()...');
       final newItem = await _inventoryService.createItem(
-        sku: sku,
-        name: name,
-        category: category,
-        description: description,
-        unitOfMeasure: unitOfMeasure,
-        weight: weight,
-        dimensions: dimensions,
-        unitCost: unitCost,
-        sellingPrice: sellingPrice,
+        sku: itemData['sku'] as String,
+        name: itemData['name'] as String,
+        category: itemData['category'] as String,
+        barcode: itemData['barcode'] as String?,
+        description: itemData['description'] as String?,
+        unitOfMeasure: itemData['unitOfMeasure'] as String?,
+        weight: itemData['weight'] as double?,
+        dimensions: itemData['dimensions'] as String?,
+        unitCost: itemData['unitCost'] as double?,
+        sellingPrice: itemData['sellingPrice'] as double?,
+        minStockLevel: itemData['minStockLevel'] as int?,
+        maxStockLevel: itemData['maxStockLevel'] as int?,
+        reorderPoint: itemData['reorderPoint'] as int?,
+        reorderQty: itemData['reorderQty'] as int?,
+        manufacturer: itemData['manufacturer'] as String?,
+        supplier: itemData['supplier'] as String?,
       );
+
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | SUCCESS - Item created successfully!');
+      print('[WMS-PROVIDER] ${DateTime.now()} | New item ID: ${newItem.id}');
+      print('[WMS-PROVIDER] ${DateTime.now()} | New item SKU: ${newItem.sku}');
 
       // Add to list
       final updatedItems = [newItem, ...state.items];
@@ -143,13 +179,24 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
       );
 
+      print('[WMS-PROVIDER] ${DateTime.now()} | State updated with new item');
+      print(
+          '[WMS-PROVIDER] ${DateTime.now()} | Total items in state: ${updatedItems.length}');
+      print('================================================\n');
+
       return true;
     } catch (e) {
+      print('[WMS-PROVIDER] ${DateTime.now()} | ERROR: $e');
+      print('[WMS-PROVIDER] ${DateTime.now()} | Error type: ${e.runtimeType}');
+
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      return false;
+
+      print('[WMS-PROVIDER] ${DateTime.now()} | State updated with error');
+      print('================================================\n');
+      rethrow;
     }
   }
 

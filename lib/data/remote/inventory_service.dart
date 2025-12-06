@@ -63,21 +63,43 @@ class InventoryService {
     String? search,
     String? category,
   }) async {
+    print('\n================================================');
+    print('[WMS-SERVICE] ${DateTime.now()} | getItems API called');
+    print(
+        '[WMS-SERVICE] ${DateTime.now()} | Endpoint: ${ApiConfig.inventoryItemsEndpoint}');
+
     final queryParams = <String, dynamic>{};
     if (page != null) queryParams['page'] = page;
     if (limit != null) queryParams['limit'] = limit;
     if (search != null) queryParams['search'] = search;
     if (category != null) queryParams['category'] = category;
 
+    print('[WMS-SERVICE] ${DateTime.now()} | Query params: $queryParams');
+    print('[WMS-SERVICE] ${DateTime.now()} | Sending GET request...');
+
     final response = await _apiClient.get<Map<String, dynamic>>(
       ApiConfig.inventoryItemsEndpoint,
       queryParameters: queryParams,
     );
 
-    final items = (response['data'] as List?)
+    print('[WMS-SERVICE] ${DateTime.now()} | Response received!');
+    print(
+        '[WMS-SERVICE] ${DateTime.now()} | Response structure: ${response.keys}');
+
+    final items = (response['items'] as List?)
             ?.map((e) => ItemModel.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
+
+    print('[WMS-SERVICE] ${DateTime.now()} | Parsed ${items.length} items');
+    if (items.isEmpty) {
+      print(
+          '[WMS-SERVICE] ${DateTime.now()} | WARNING - No items found in response');
+    } else {
+      print('[WMS-SERVICE] ${DateTime.now()} | First item: ${items[0].sku}');
+    }
+    print('================================================\n');
+
     return items;
   }
 
@@ -95,29 +117,73 @@ class InventoryService {
     required String sku,
     required String name,
     required String category,
+    String? barcode,
     String? description,
     String? unitOfMeasure,
     double? weight,
     String? dimensions,
     double? unitCost,
     double? sellingPrice,
+    int? minStockLevel,
+    int? maxStockLevel,
+    int? reorderPoint,
+    int? reorderQty,
+    String? manufacturer,
+    String? supplier,
   }) async {
+    print('\n================================================');
+    print('[WMS-SERVICE] ${DateTime.now()} | createItem API called');
+    print(
+        '[WMS-SERVICE] ${DateTime.now()} | Endpoint: ${ApiConfig.inventoryItemsEndpoint}');
+    print('[WMS-SERVICE] ${DateTime.now()} | Request data:');
+    print('[WMS-SERVICE] ${DateTime.now()} |   SKU: $sku');
+    print('[WMS-SERVICE] ${DateTime.now()} |   Name: $name');
+    print('[WMS-SERVICE] ${DateTime.now()} |   Category: $category');
+    print('[WMS-SERVICE] ${DateTime.now()} |   Barcode: $barcode');
+    print('[WMS-SERVICE] ${DateTime.now()} |   Unit Cost: $unitCost');
+
+    final requestData = {
+      'sku': sku,
+      'name': name,
+      'category': category,
+      'barcode': barcode,
+      'description': description,
+      'unitOfMeasure': unitOfMeasure,
+      'weight': weight,
+      'dimensions': dimensions,
+      'unitCost': unitCost,
+      'sellingPrice': sellingPrice,
+      'minStockLevel': minStockLevel,
+      'maxStockLevel': maxStockLevel,
+      'reorderPoint': reorderPoint,
+      'reorderQty': reorderQty,
+      'manufacturer': manufacturer,
+      'supplier': supplier,
+    };
+
+    print('[WMS-SERVICE] ${DateTime.now()} | Sending POST request...');
+
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiConfig.inventoryItemsEndpoint,
-      data: {
-        'sku': sku,
-        'name': name,
-        'category': category,
-        'description': description,
-        'unitOfMeasure': unitOfMeasure,
-        'weight': weight,
-        'dimensions': dimensions,
-        'unitCost': unitCost,
-        'sellingPrice': sellingPrice,
-      },
+      data: requestData,
     );
 
-    return ItemModel.fromJson(response);
+    print('[WMS-SERVICE] ${DateTime.now()} | Response received!');
+    print('[WMS-SERVICE] ${DateTime.now()} | Response data: $response');
+    print('[WMS-SERVICE] ${DateTime.now()} | Parsing response to ItemModel...');
+
+    // Extract item from response wrapper
+    final itemData = response['item'] as Map<String, dynamic>;
+    print('[WMS-SERVICE] ${DateTime.now()} | Item data extracted from wrapper');
+
+    final itemModel = ItemModel.fromJson(itemData);
+    print(
+        '[WMS-SERVICE] ${DateTime.now()} | SUCCESS - Item parsed successfully!');
+    print('[WMS-SERVICE] ${DateTime.now()} | Item ID: ${itemModel.id}');
+    print('[WMS-SERVICE] ${DateTime.now()} | Item SKU: ${itemModel.sku}');
+    print('================================================\n');
+
+    return itemModel;
   }
 
   /// Update item

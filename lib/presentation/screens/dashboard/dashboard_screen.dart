@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wms_mobile/domain/providers/auth_provider.dart';
 import 'package:wms_mobile/domain/providers/inventory_provider.dart';
 import 'package:wms_mobile/domain/providers/warehouse_provider.dart';
 import 'package:wms_mobile/data/local/models/user_model.dart';
+import 'package:wms_mobile/presentation/screens/inventory/add_item_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -17,7 +19,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
+    // Load data after build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardData();
+    });
   }
 
   void _loadDashboardData() {
@@ -33,51 +38,80 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final warehouseState = ref.watch(warehouseProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        print('[WMS-UI-DASHBOARD] ${DateTime.now()} | Back button pressed');
+        // Dashboard adalah halaman utama, konfirmasi untuk keluar aplikasi
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text('Do you want to exit the application?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Exit'),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              _showProfileMenu(context);
+        );
+
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+          return true;
+        }
+        return true; // Return true to prevent default behavior
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Dashboard'),
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_outline),
+              onPressed: () {
+                _showProfileMenu(context);
+              },
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await Future.wait([
+                ref.read(inventoryProvider.notifier).fetchItems(),
+                ref.read(warehouseProvider.notifier).fetchWarehouses(),
+              ]);
             },
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await Future.wait([
-              ref.read(inventoryProvider.notifier).fetchItems(),
-              ref.read(warehouseProvider.notifier).fetchWarehouses(),
-            ]);
-          },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Greeting Card
-                _buildGreetingCard(user, theme),
-                const SizedBox(height: 24),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Greeting Card
+                  _buildGreetingCard(user, theme),
+                  const SizedBox(height: 24),
 
-                // Quick Stats
-                _buildQuickStats(inventoryState, warehouseState, theme),
-                const SizedBox(height: 24),
+                  // Quick Stats
+                  _buildQuickStats(inventoryState, warehouseState, theme),
+                  const SizedBox(height: 24),
 
-                // Quick Actions
-                _buildQuickActions(context, theme),
-                const SizedBox(height: 24),
+                  // Quick Actions
+                  _buildQuickActions(context, theme),
+                  const SizedBox(height: 24),
 
-                // Recent Items
-                _buildRecentItems(inventoryState, theme),
-              ],
+                  // Recent Items
+                  _buildRecentItems(inventoryState, theme),
+                ],
+              ),
             ),
           ),
         ),
@@ -250,7 +284,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.add_circle_outline,
               title: 'New Item',
               color: Colors.blue,
-              onTap: () {},
+              onTap: () async {
+                print('\n================================================');
+                print(
+                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | New Item button tapped');
+                print(
+                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | Navigating to AddItemScreen');
+
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddItemScreen()),
+                );
+
+                print(
+                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | Returned with result: $result');
+
+                if (result == true && mounted) {
+                  print(
+                      '[WMS-UI-DASHBOARD] ${DateTime.now()} | Refreshing inventory list');
+                  ref.read(inventoryProvider.notifier).fetchItems();
+                  print(
+                      '[WMS-UI-DASHBOARD] ${DateTime.now()} | SUCCESS - Inventory list refreshed');
+                }
+                print('================================================\n');
+              },
             ),
             _buildActionButton(
               icon: Icons.exit_to_app,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wms_mobile/domain/providers/inventory_provider.dart';
 import 'package:wms_mobile/data/local/models/item_model.dart';
+import 'package:wms_mobile/presentation/screens/inventory/add_item_screen.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({Key? key}) : super(key: key);
@@ -26,7 +28,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _loadInventory();
+    // Load inventory after build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInventory();
+    });
   }
 
   @override
@@ -52,146 +57,167 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final inventoryState = ref.watch(inventoryProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventory'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: () {
-              _showFilterBottomSheet(context, theme);
-            },
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        print('[WMS-UI-INVENTORY] ${DateTime.now()} | Back button pressed');
+        context.go('/dashboard');
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/dashboard'),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _handleSearch,
-                decoration: InputDecoration(
-                  hintText: 'Search items...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _handleSearch('');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
+          title: const Text('Inventory'),
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: () {
+                _showFilterBottomSheet(context, theme);
+              },
             ),
-
-            // Category Filter
-            SizedBox(
-              height: 45,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  final isSelected = category == _selectedCategory;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(category),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          _selectedCategory = category;
-                        });
-                        if (category == 'All') {
-                          _loadInventory();
-                        } else {
-                          ref
-                              .read(inventoryProvider.notifier)
-                              .getItemsByCategory(category);
-                        }
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Items List
-            Expanded(
-              child: inventoryState.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : inventoryState.items.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox,
-                                size: 64,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No items found',
-                                style: theme.textTheme.titleMedium,
-                              ),
-                            ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            await ref
-                                .read(inventoryProvider.notifier)
-                                .fetchItems();
-                          },
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: inventoryState.items.length,
-                            itemBuilder: (context, index) {
-                              final item = inventoryState.items[index];
-                              return _buildItemCard(item, theme);
-                            },
-                          ),
-                        ),
-            ),
-
-            // Error Message
-            if (inventoryState.error != null)
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withOpacity(0.5)),
-                ),
-                child: Text(
-                  inventoryState.error!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.red,
-                  ),
-                ),
-              ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _showAddItemDialog(context, theme);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New Item'),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _handleSearch,
+                  decoration: InputDecoration(
+                    hintText: 'Search items...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _handleSearch('');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Category Filter
+              SizedBox(
+                height: 45,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final category = _categories[index];
+                    final isSelected = category == _selectedCategory;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                          if (category == 'All') {
+                            _loadInventory();
+                          } else {
+                            ref
+                                .read(inventoryProvider.notifier)
+                                .getItemsByCategory(category);
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Items List
+              Expanded(
+                child: inventoryState.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : inventoryState.items.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inbox,
+                                  size: 64,
+                                  color: Colors.grey[300],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No items found',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              await ref
+                                  .read(inventoryProvider.notifier)
+                                  .fetchItems();
+                            },
+                            child: ListView.builder(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: inventoryState.items.length,
+                              itemBuilder: (context, index) {
+                                final item = inventoryState.items[index];
+                                return _buildItemCard(item, theme);
+                              },
+                            ),
+                          ),
+              ),
+
+              // Error Message
+              if (inventoryState.error != null)
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    inventoryState.error!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddItemScreen(),
+              ),
+            );
+            if (result == true && mounted) {
+              // Refresh inventory list after adding new item
+              _loadInventory();
+            }
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('New Item'),
+        ),
       ),
     );
   }
@@ -245,7 +271,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 _buildDetailRow('Category', item.category, theme),
                 _buildDetailRow('UOM', item.unitOfMeasure ?? 'N/A', theme),
                 _buildDetailRow('Unit Cost',
-                    '\$${item.unitCost?.toStringAsFixed(2) ?? "0.00"}', theme),
+                    '\$${item.unitCost.toStringAsFixed(2)}', theme),
                 _buildDetailRow(
                     'Selling Price',
                     '\$${item.sellingPrice?.toStringAsFixed(2) ?? "0.00"}',

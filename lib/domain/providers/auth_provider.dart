@@ -46,12 +46,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Load stored authentication from local storage
   Future<void> _loadStoredAuth() async {
+    print('\n================================================');
+    print(
+        '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Loading stored authentication...');
+
     try {
       final authBox = AppConfig.getBox('auth_box');
       final token = authBox.get('token') as String?;
       final userJson = authBox.get('user');
 
       if (token != null && userJson != null) {
+        print(
+            '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Found stored credentials');
         final user = UserModel.fromJson(
           Map<String, dynamic>.from(userJson as Map),
         );
@@ -60,25 +66,55 @@ class AuthNotifier extends StateNotifier<AuthState> {
           user: user,
           isAuthenticated: true,
         );
+        print(
+            '[WMS-AUTH-PROVIDER] ${DateTime.now()} | SUCCESS - Auto-login successful');
+        print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | User: ${user.email}');
+      } else {
+        print(
+            '[WMS-AUTH-PROVIDER] ${DateTime.now()} | No stored credentials found');
       }
+      print('================================================\n');
     } catch (e) {
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | ERROR - Error loading auth: $e');
+      print('================================================\n');
       state = state.copyWith(error: 'Failed to load stored authentication');
     }
   }
 
   /// Login user
   Future<bool> login(String email, String password) async {
+    print('\n================================================');
+    print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | login() called');
+    print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | Email: $email');
+
     state = state.copyWith(isLoading: true, error: null);
+    print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | State set to loading');
+
     try {
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Calling authService.login()...');
       final response = await _authService.login(
         email: email,
         password: password,
       );
 
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Response received from API');
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Token: ${response.token.substring(0, 20)}...');
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | User: ${response.user.email} (${response.user.fullName})');
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Role: ${response.user.role}');
+
       // Save to local storage
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Saving credentials to local storage...');
       final authBox = AppConfig.getBox('auth_box');
       await authBox.put('token', response.token);
       await authBox.put('user', response.user.toJson());
+      print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | Credentials saved');
 
       // Update state
       state = state.copyWith(
@@ -88,8 +124,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
 
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | SUCCESS - Login successful!');
+      print('================================================\n');
       return true;
     } catch (e) {
+      print('[WMS-AUTH-PROVIDER] ${DateTime.now()} | ERROR - Login failed: $e');
+      print(
+          '[WMS-AUTH-PROVIDER] ${DateTime.now()} | Error type: ${e.runtimeType}');
+      print('================================================\n');
+
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

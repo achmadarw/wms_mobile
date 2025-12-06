@@ -46,7 +46,15 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return _apiClient.post<AuthResponse>(
+    print('\n================================================');
+    print('[WMS-AUTH-SERVICE] ${DateTime.now()} | login() API called');
+    print(
+        '[WMS-AUTH-SERVICE] ${DateTime.now()} | Endpoint: ${ApiConfig.loginEndpoint}');
+    print('[WMS-AUTH-SERVICE] ${DateTime.now()} | Email: $email');
+    print('[WMS-AUTH-SERVICE] ${DateTime.now()} | Password: ***');
+    print('[WMS-AUTH-SERVICE] ${DateTime.now()} | Sending POST request...');
+
+    final response = await _apiClient.post<AuthResponse>(
       ApiConfig.loginEndpoint,
       data: {
         'email': email,
@@ -54,6 +62,17 @@ class AuthService {
       },
       fromJson: (json) => AuthResponse.fromJson(json as Map<String, dynamic>),
     );
+
+    print('[WMS-AUTH-SERVICE] ${DateTime.now()} | Response received!');
+    print(
+        '[WMS-AUTH-SERVICE] ${DateTime.now()} | Token received: ${response.token.substring(0, 20)}...');
+    print(
+        '[WMS-AUTH-SERVICE] ${DateTime.now()} | User: ${response.user.email}');
+    print(
+        '[WMS-AUTH-SERVICE] ${DateTime.now()} | SUCCESS - Login API successful!');
+    print('================================================\n');
+
+    return response;
   }
 
   /// Register new user
