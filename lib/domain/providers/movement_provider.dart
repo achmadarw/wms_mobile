@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wms_mobile/data/remote/movement_service.dart';
+import 'package:wms_mobile/data/local/models/movement_model.dart';
 import 'package:wms_mobile/domain/providers/auth_provider.dart';
 
 // Movement State
 class MovementState {
-  final List<Movement> movements;
-  final Movement? selectedMovement;
+  final List<MovementModel> movements;
+  final MovementModel? selectedMovement;
   final bool isLoading;
   final String? error;
   final int page;
@@ -25,8 +26,8 @@ class MovementState {
   });
 
   MovementState copyWith({
-    List<Movement>? movements,
-    Movement? selectedMovement,
+    List<MovementModel>? movements,
+    MovementModel? selectedMovement,
     bool? isLoading,
     String? error,
     int? page,
@@ -38,7 +39,7 @@ class MovementState {
       movements: movements ?? this.movements,
       selectedMovement: selectedMovement ?? this.selectedMovement,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: error,
       page: page ?? this.page,
       limit: limit ?? this.limit,
       filterType: filterType ?? this.filterType,
@@ -68,6 +69,8 @@ class MovementNotifier extends StateNotifier<MovementState> {
     String? type,
     String? status,
   }) async {
+    print(
+        '[WMS-PROVIDER] fetchMovements called - page: $page, type: $type, status: $status');
     _initializeService();
 
     state = state.copyWith(
@@ -82,15 +85,18 @@ class MovementNotifier extends StateNotifier<MovementState> {
       final movements = await _movementService.getMovements(
         page: page ?? state.page,
         limit: state.limit,
-        type: type,
-        status: status,
+        type: type ?? state.filterType,
+        status: status ?? state.filterStatus,
       );
+
+      print('[WMS-PROVIDER] SUCCESS - Fetched ${movements.length} movements');
 
       state = state.copyWith(
         movements: movements,
         isLoading: false,
       );
     } catch (e) {
+      print('[WMS-PROVIDER] ERROR - Failed to fetch movements: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -99,37 +105,49 @@ class MovementNotifier extends StateNotifier<MovementState> {
   }
 
   /// Get movement by ID
-  Future<Movement?> getMovementById(String movementId) async {
+  Future<MovementModel?> getMovementById(String movementId) async {
+    print('[WMS-PROVIDER] getMovementById called - ID: $movementId');
     _initializeService();
 
     try {
-      return await _movementService.getMovementById(movementId);
+      final movement = await _movementService.getMovementById(movementId);
+      print(
+          '[WMS-PROVIDER] SUCCESS - Fetched movement: ${movement?.referenceNo}');
+      return movement;
     } catch (e) {
+      print('[WMS-PROVIDER] ERROR - Failed to get movement: $e');
       state = state.copyWith(error: e.toString());
       return null;
     }
   }
 
-  /// Create inbound movement
-  Future<bool> createInboundMovement({
-    required String itemId,
+  /// Create movement
+  Future<bool> createMovement({
+    required String type,
     required int quantity,
-    required String toWarehouseId,
-    required String toBinId,
-    String? remarks,
+    required String itemId,
+    String? fromBin,
+    String? toBin,
+    String? notes,
   }) async {
+    print(
+        '[WMS-PROVIDER] createMovement called - type: $type, itemId: $itemId, quantity: $quantity');
     _initializeService();
 
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final movement = await _movementService.createInboundMovement(
-        itemId: itemId,
+      final movement = await _movementService.createMovement(
+        type: type,
         quantity: quantity,
-        toWarehouseId: toWarehouseId,
-        toBinId: toBinId,
-        remarks: remarks,
+        itemId: itemId,
+        fromBin: fromBin,
+        toBin: toBin,
+        notes: notes,
       );
+
+      print(
+          '[WMS-PROVIDER] SUCCESS - Movement created: ${movement.referenceNo}');
 
       final updatedMovements = [movement, ...state.movements];
       state = state.copyWith(
@@ -139,167 +157,52 @@ class MovementNotifier extends StateNotifier<MovementState> {
 
       return true;
     } catch (e) {
+      print('[WMS-PROVIDER] ERROR - Failed to create movement: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      return false;
-    }
-  }
-
-  /// Create outbound movement
-  Future<bool> createOutboundMovement({
-    required String itemId,
-    required int quantity,
-    required String fromWarehouseId,
-    required String fromBinId,
-    String? remarks,
-  }) async {
-    _initializeService();
-
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final movement = await _movementService.createOutboundMovement(
-        itemId: itemId,
-        quantity: quantity,
-        fromWarehouseId: fromWarehouseId,
-        fromBinId: fromBinId,
-        remarks: remarks,
-      );
-
-      final updatedMovements = [movement, ...state.movements];
-      state = state.copyWith(
-        movements: updatedMovements,
-        isLoading: false,
-      );
-
-      return true;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      return false;
-    }
-  }
-
-  /// Create transfer movement
-  Future<bool> createTransferMovement({
-    required String itemId,
-    required int quantity,
-    required String fromWarehouseId,
-    required String fromBinId,
-    required String toWarehouseId,
-    required String toBinId,
-    String? remarks,
-  }) async {
-    _initializeService();
-
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final movement = await _movementService.createTransferMovement(
-        itemId: itemId,
-        quantity: quantity,
-        fromWarehouseId: fromWarehouseId,
-        fromBinId: fromBinId,
-        toWarehouseId: toWarehouseId,
-        toBinId: toBinId,
-        remarks: remarks,
-      );
-
-      final updatedMovements = [movement, ...state.movements];
-      state = state.copyWith(
-        movements: updatedMovements,
-        isLoading: false,
-      );
-
-      return true;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      return false;
-    }
-  }
-
-  /// Approve movement
-  Future<bool> approveMovement(String movementId) async {
-    _initializeService();
-
-    try {
-      final updatedMovement =
-          await _movementService.approveMovement(movementId);
-
-      final updatedMovements = state.movements.map((movement) {
-        return movement.id == movementId ? updatedMovement : movement;
-      }).toList();
-
-      state = state.copyWith(movements: updatedMovements);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return false;
-    }
-  }
-
-  /// Reject movement
-  Future<bool> rejectMovement(String movementId, String reason) async {
-    _initializeService();
-
-    try {
-      final updatedMovement = await _movementService.rejectMovement(
-        movementId,
-        reason,
-      );
-
-      final updatedMovements = state.movements.map((movement) {
-        return movement.id == movementId ? updatedMovement : movement;
-      }).toList();
-
-      state = state.copyWith(movements: updatedMovements);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
       return false;
     }
   }
 
   /// Filter by type
-  Future<void> filterByType(String type) async {
-    await fetchMovements(type: type, page: 1);
+  void filterByType(String? type) {
+    print('[WMS-PROVIDER] filterByType called - type: $type');
+    fetchMovements(type: type, status: state.filterStatus);
   }
 
   /// Filter by status
-  Future<void> filterByStatus(String status) async {
-    await fetchMovements(status: status, page: 1);
+  void filterByStatus(String? status) {
+    print('[WMS-PROVIDER] filterByStatus called - status: $status');
+    fetchMovements(type: state.filterType, status: status);
   }
 
-  /// Clear error
-  void clearError() {
-    state = state.copyWith(error: null);
+  /// Clear filters
+  void clearFilters() {
+    print('[WMS-PROVIDER] clearFilters called');
+    state = state.copyWith(
+      filterType: null,
+      filterStatus: null,
+    );
+    fetchMovements();
   }
 
-  /// Reset state
-  void reset() {
-    state = MovementState();
+  /// Load more movements (pagination)
+  Future<void> loadMore() async {
+    print('[WMS-PROVIDER] loadMore called - current page: ${state.page}');
+    if (!state.isLoading) {
+      fetchMovements(
+        page: state.page + 1,
+        type: state.filterType,
+        status: state.filterStatus,
+      );
+    }
   }
 }
 
-// Movement Provider
+// Provider
 final movementProvider =
     StateNotifierProvider<MovementNotifier, MovementState>((ref) {
   return MovementNotifier(ref);
-});
-
-// All movements provider
-final allMovementsProvider = Provider<List<Movement>>((ref) {
-  return ref.watch(movementProvider).movements;
-});
-
-// Selected movement provider
-final selectedMovementProvider = StateProvider<Movement?>((ref) {
-  return null;
 });

@@ -4,6 +4,8 @@ import 'package:wms_mobile/presentation/screens/auth/login_screen.dart';
 import 'package:wms_mobile/presentation/screens/auth/register_screen.dart';
 import 'package:wms_mobile/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:wms_mobile/presentation/screens/inventory/inventory_screen.dart';
+import 'package:wms_mobile/presentation/screens/movements/movements_screen.dart';
+import 'package:wms_mobile/presentation/screens/movements/add_movement_screen.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -45,9 +47,12 @@ class AppRoutes {
       GoRoute(
         path: movements,
         name: 'movements',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Movements Screen')),
-        ),
+        builder: (context, state) => const MovementsScreen(),
+      ),
+      GoRoute(
+        path: '/movements/add',
+        name: 'add-movement',
+        builder: (context, state) => const AddMovementScreen(),
       ),
       GoRoute(
         path: warehouses,

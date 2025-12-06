@@ -1,293 +1,219 @@
-import 'package:wms_mobile/data/remote/api_client.dart';
-import 'package:wms_mobile/config/api_config.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:wms_mobile/data/local/models/movement_model.dart';
 
-enum MovementType {
-  inbound,
-  outbound,
-  transfer,
-  adjustment,
-  returns,
-}
-
-class Movement {
-  final String id;
-  final String movementNumber;
-  final MovementType type;
-  final String itemId;
-  final String itemName;
-  final String itemSku;
-  final int quantity;
-  final String fromBinId;
-  final String fromBinCode;
-  final String toBinId;
-  final String toBinCode;
-  final String fromWarehouseId;
-  final String toWarehouseId;
-  final String createdBy;
-  final String status;
-  final String? remarks;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Movement({
-    required this.id,
-    required this.movementNumber,
-    required this.type,
-    required this.itemId,
-    required this.itemName,
-    required this.itemSku,
-    required this.quantity,
-    required this.fromBinId,
-    required this.fromBinCode,
-    required this.toBinId,
-    required this.toBinCode,
-    required this.fromWarehouseId,
-    required this.toWarehouseId,
-    required this.createdBy,
-    required this.status,
-    this.remarks,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Movement.fromJson(Map<String, dynamic> json) {
-    return Movement(
-      id: json['id'] as String,
-      movementNumber: json['movementNumber'] as String,
-      type: MovementType.values.byName(json['type'] as String),
-      itemId: json['itemId'] as String,
-      itemName: json['itemName'] as String,
-      itemSku: json['itemSku'] as String,
-      quantity: json['quantity'] as int,
-      fromBinId: json['fromBinId'] as String,
-      fromBinCode: json['fromBinCode'] as String,
-      toBinId: json['toBinId'] as String,
-      toBinCode: json['toBinCode'] as String,
-      fromWarehouseId: json['fromWarehouseId'] as String,
-      toWarehouseId: json['toWarehouseId'] as String,
-      createdBy: json['createdBy'] as String,
-      status: json['status'] as String,
-      remarks: json['remarks'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'movementNumber': movementNumber,
-        'type': type.name,
-        'itemId': itemId,
-        'itemName': itemName,
-        'itemSku': itemSku,
-        'quantity': quantity,
-        'fromBinId': fromBinId,
-        'fromBinCode': fromBinCode,
-        'toBinId': toBinId,
-        'toBinCode': toBinCode,
-        'fromWarehouseId': fromWarehouseId,
-        'toWarehouseId': toWarehouseId,
-        'createdBy': createdBy,
-        'status': status,
-        'remarks': remarks,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+class APIConfig {
+  static const String baseURL = 'http://192.168.18.20:3000';
+  static const String movementsEndpoint = '/api/inventory/movements';
 }
 
 class MovementService {
-  late final ApiClient _apiClient;
+  final String token;
 
-  MovementService(String token) {
-    _apiClient = ApiClient(token: token);
-  }
+  MovementService(this.token);
 
-  /// Get all movements
-  Future<List<Movement>> getMovements({
-    int? page,
-    int? limit,
+  /// Get movements with optional filters
+  Future<List<MovementModel>> getMovements({
+    int page = 1,
+    int limit = 20,
     String? type,
     String? status,
+    String? itemId,
+    String? warehouseId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
-    final queryParams = <String, dynamic>{};
-    if (page != null) queryParams['page'] = page;
-    if (limit != null) queryParams['limit'] = limit;
-    if (type != null) queryParams['type'] = type;
-    if (status != null) queryParams['status'] = status;
+    print('[WMS-SERVICE] getMovements called');
+    print('[WMS-SERVICE] Endpoint: ${APIConfig.movementsEndpoint}');
+    print(
+        '[WMS-SERVICE] Params - page: $page, limit: $limit, type: $type, status: $status');
 
-    final response = await _apiClient.get<Map<String, dynamic>>(
-      ApiConfig.movementsEndpoint,
-      queryParameters: queryParams,
-    );
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+        if (type != null) 'type': type,
+        if (status != null) 'status': status,
+        if (itemId != null) 'itemId': itemId,
+        if (warehouseId != null) 'warehouseId': warehouseId,
+        if (startDate != null) 'startDate': startDate.toIso8601String(),
+        if (endDate != null) 'endDate': endDate.toIso8601String(),
+      };
 
-    final movements = (response['data'] as List?)
-            ?.map((e) => Movement.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [];
-    return movements;
+      final uri =
+          Uri.parse('${APIConfig.baseURL}${APIConfig.movementsEndpoint}')
+              .replace(queryParameters: queryParams);
+
+      print('[WMS-SERVICE] Full URL: $uri');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('[WMS-SERVICE] Response status: ${response.statusCode}');
+      print('[WMS-SERVICE] Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+
+        // Handle different response structures
+        List<dynamic> movementsJson;
+        if (jsonData is List) {
+          movementsJson = jsonData;
+        } else if (jsonData['movements'] != null) {
+          movementsJson = jsonData['movements'];
+        } else if (jsonData['data'] != null) {
+          movementsJson = jsonData['data'];
+        } else {
+          print('[WMS-SERVICE] ERROR - Unexpected response structure');
+          return [];
+        }
+
+        final movements =
+            movementsJson.map((json) => MovementModel.fromJson(json)).toList();
+
+        print('[WMS-SERVICE] SUCCESS - Parsed ${movements.length} movements');
+        return movements;
+      } else {
+        print(
+            '[WMS-SERVICE] ERROR - Status ${response.statusCode}: ${response.body}');
+        throw Exception('Failed to load movements: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[WMS-SERVICE] ERROR - Exception: $e');
+      rethrow;
+    }
   }
 
   /// Get movement by ID
-  Future<Movement> getMovementById(String movementId) async {
-    final response = await _apiClient.get<Map<String, dynamic>>(
-      '${ApiConfig.movementsEndpoint}/$movementId',
-    );
+  Future<MovementModel?> getMovementById(String id) async {
+    print('[WMS-SERVICE] getMovementById called - ID: $id');
+    print('[WMS-SERVICE] Endpoint: ${APIConfig.movementsEndpoint}/$id');
 
-    return Movement.fromJson(response);
+    try {
+      final uri =
+          Uri.parse('${APIConfig.baseURL}${APIConfig.movementsEndpoint}/$id');
+      print('[WMS-SERVICE] Full URL: $uri');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('[WMS-SERVICE] Response status: ${response.statusCode}');
+      print('[WMS-SERVICE] Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+
+        // Handle different response structures
+        Map<String, dynamic> movementJson;
+        if (jsonData is Map) {
+          if (jsonData['movement'] != null) {
+            movementJson = Map<String, dynamic>.from(jsonData['movement']);
+          } else if (jsonData['data'] != null) {
+            movementJson = Map<String, dynamic>.from(jsonData['data']);
+          } else {
+            movementJson = Map<String, dynamic>.from(jsonData);
+          }
+        } else {
+          print('[WMS-SERVICE] ERROR - Unexpected response structure');
+          return null;
+        }
+
+        final movement = MovementModel.fromJson(movementJson);
+        print(
+            '[WMS-SERVICE] SUCCESS - Parsed movement: ${movement.referenceNo}');
+        return movement;
+      } else {
+        print(
+            '[WMS-SERVICE] ERROR - Status ${response.statusCode}: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('[WMS-SERVICE] ERROR - Exception: $e');
+      rethrow;
+    }
   }
 
-  /// Create inbound movement
-  Future<Movement> createInboundMovement({
-    required String itemId,
-    required int quantity,
-    required String toWarehouseId,
-    required String toBinId,
-    String? remarks,
-  }) async {
-    return _createMovement(
-      type: 'inbound',
-      itemId: itemId,
-      quantity: quantity,
-      toWarehouseId: toWarehouseId,
-      toBinId: toBinId,
-      remarks: remarks,
-    );
-  }
-
-  /// Create outbound movement
-  Future<Movement> createOutboundMovement({
-    required String itemId,
-    required int quantity,
-    required String fromWarehouseId,
-    required String fromBinId,
-    String? remarks,
-  }) async {
-    return _createMovement(
-      type: 'outbound',
-      itemId: itemId,
-      quantity: quantity,
-      fromWarehouseId: fromWarehouseId,
-      fromBinId: fromBinId,
-      remarks: remarks,
-    );
-  }
-
-  /// Create transfer movement
-  Future<Movement> createTransferMovement({
-    required String itemId,
-    required int quantity,
-    required String fromWarehouseId,
-    required String fromBinId,
-    required String toWarehouseId,
-    required String toBinId,
-    String? remarks,
-  }) async {
-    return _createMovement(
-      type: 'transfer',
-      itemId: itemId,
-      quantity: quantity,
-      fromWarehouseId: fromWarehouseId,
-      fromBinId: fromBinId,
-      toWarehouseId: toWarehouseId,
-      toBinId: toBinId,
-      remarks: remarks,
-    );
-  }
-
-  /// Create adjustment movement
-  Future<Movement> createAdjustmentMovement({
-    required String itemId,
-    required int quantity,
-    required String warehouseId,
-    required String binId,
-    String? remarks,
-  }) async {
-    return _createMovement(
-      type: 'adjustment',
-      itemId: itemId,
-      quantity: quantity,
-      fromWarehouseId: warehouseId,
-      fromBinId: binId,
-      toWarehouseId: warehouseId,
-      toBinId: binId,
-      remarks: remarks,
-    );
-  }
-
-  /// Create return movement
-  Future<Movement> createReturnMovement({
-    required String itemId,
-    required int quantity,
-    required String fromWarehouseId,
-    required String fromBinId,
-    required String toWarehouseId,
-    required String toBinId,
-    String? remarks,
-  }) async {
-    return _createMovement(
-      type: 'returns',
-      itemId: itemId,
-      quantity: quantity,
-      fromWarehouseId: fromWarehouseId,
-      fromBinId: fromBinId,
-      toWarehouseId: toWarehouseId,
-      toBinId: toBinId,
-      remarks: remarks,
-    );
-  }
-
-  /// Internal method to create movement
-  Future<Movement> _createMovement({
+  /// Create movement
+  Future<MovementModel> createMovement({
     required String type,
-    required String itemId,
     required int quantity,
-    String? fromWarehouseId,
-    String? fromBinId,
-    String? toWarehouseId,
-    String? toBinId,
-    String? remarks,
+    required String itemId,
+    String? fromBin,
+    String? toBin,
+    String? notes,
   }) async {
-    final data = <String, dynamic>{
-      'type': type,
-      'itemId': itemId,
-      'quantity': quantity,
-    };
+    print('[WMS-SERVICE] createMovement called');
+    print('[WMS-SERVICE] Endpoint: ${APIConfig.movementsEndpoint}');
+    print(
+        '[WMS-SERVICE] Data - type: $type, itemId: $itemId, quantity: $quantity');
 
-    if (fromWarehouseId != null) data['fromWarehouseId'] = fromWarehouseId;
-    if (fromBinId != null) data['fromBinId'] = fromBinId;
-    if (toWarehouseId != null) data['toWarehouseId'] = toWarehouseId;
-    if (toBinId != null) data['toBinId'] = toBinId;
-    if (remarks != null) data['remarks'] = remarks;
+    try {
+      final uri =
+          Uri.parse('${APIConfig.baseURL}${APIConfig.movementsEndpoint}');
+      print('[WMS-SERVICE] Full URL: $uri');
 
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiConfig.movementsEndpoint,
-      data: data,
-    );
+      final requestBody = {
+        'type': type,
+        'quantity': quantity,
+        'itemId': itemId,
+        if (fromBin != null) 'fromBin': fromBin,
+        if (toBin != null) 'toBin': toBin,
+        if (notes != null) 'notes': notes,
+      };
 
-    return Movement.fromJson(response);
-  }
+      print('[WMS-SERVICE] Request body: ${json.encode(requestBody)}');
 
-  /// Approve movement
-  Future<Movement> approveMovement(String movementId) async {
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      '${ApiConfig.movementsEndpoint}/$movementId/approve',
-    );
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(requestBody),
+      );
 
-    return Movement.fromJson(response);
-  }
+      print('[WMS-SERVICE] Response status: ${response.statusCode}');
+      print('[WMS-SERVICE] Response body: ${response.body}');
 
-  /// Reject movement
-  Future<Movement> rejectMovement(String movementId, String reason) async {
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      '${ApiConfig.movementsEndpoint}/$movementId/reject',
-      data: {'reason': reason},
-    );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonData = json.decode(response.body);
 
-    return Movement.fromJson(response);
-  }
+        // Handle different response structures
+        Map<String, dynamic> movementJson;
+        if (jsonData is Map) {
+          if (jsonData['movement'] != null) {
+            movementJson = Map<String, dynamic>.from(jsonData['movement']);
+          } else if (jsonData['data'] != null) {
+            movementJson = Map<String, dynamic>.from(jsonData['data']);
+          } else {
+            movementJson = Map<String, dynamic>.from(jsonData);
+          }
+        } else {
+          throw Exception('Unexpected response structure');
+        }
 
-  /// Update token
-  void updateToken(String token) {
-    _apiClient.updateToken(token);
+        final movement = MovementModel.fromJson(movementJson);
+        print(
+            '[WMS-SERVICE] SUCCESS - Created movement: ${movement.referenceNo}');
+        return movement;
+      } else {
+        print(
+            '[WMS-SERVICE] ERROR - Status ${response.statusCode}: ${response.body}');
+        throw Exception('Failed to create movement: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[WMS-SERVICE] ERROR - Exception: $e');
+      rethrow;
+    }
   }
 }

@@ -20,7 +20,7 @@ class ApiConfig {
   static const String warehousesEndpoint = '/api/warehouses';
   static const String binsEndpoint = '/api/warehouses/bins';
 
-  static const String movementsEndpoint = '/api/movements';
+  static const String movementsEndpoint = '/api/inventory/movements';
   static const String reportsEndpoint = '/api/reports';
 
   // Full URLs
