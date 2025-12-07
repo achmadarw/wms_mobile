@@ -2,24 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Colors
-  static const Color primaryColor = Color(0xFF2563EB);
-  static const Color primaryDark = Color(0xFF1E40AF);
-  static const Color primaryLight = Color(0xFFDBEAFE);
+  // Corporate Colors - Matching WMS Portal Theme
+  // Primary (Indigo)
+  static const Color primaryColor = Color(0xFF4F46E5); // indigo-600
+  static const Color primaryDark = Color(0xFF4338CA); // indigo-700
+  static const Color primaryLight = Color(0xFF818CF8); // indigo-400
+  static const Color primaryLighter = Color(0xFFE0E7FF); // indigo-100
 
-  static const Color successColor = Color(0xFF10B981);
-  static const Color warningColor = Color(0xFFF59E0B);
-  static const Color dangerColor = Color(0xFFEF4444);
-  static const Color infoColor = Color(0xFF06B6D4);
+  // Neutral (Slate)
+  static const Color slate50 = Color(0xFFF8FAFC);
+  static const Color slate100 = Color(0xFFF1F5F9);
+  static const Color slate200 = Color(0xFFE2E8F0);
+  static const Color slate300 = Color(0xFFCBD5E1);
+  static const Color slate600 = Color(0xFF475569);
+  static const Color slate700 = Color(0xFF334155);
+  static const Color slate900 = Color(0xFF0F172A);
 
-  static const Color backgroundColor = Color(0xFFF9FAFB);
+  // Semantic Colors
+  static const Color successColor = Color(0xFF059669); // emerald-600
+  static const Color warningColor = Color(0xFFD97706); // amber-600
+  static const Color dangerColor = Color(0xFFDC2626); // red-600
+  static const Color infoColor = Color(0xFF2563EB); // blue-600
+
+  static const Color backgroundColor = slate50;
   static const Color surfaceColor = Color(0xFFFFFFFF);
-  static const Color borderColor = Color(0xFFE5E7EB);
-  static const Color dividerColor = Color(0xFFF3F4F6);
+  static const Color borderColor = slate200;
+  static const Color dividerColor = slate100;
 
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textPrimary = slate900;
+  static const Color textSecondary = slate600;
+  static const Color textTertiary = slate300;
 
   // Light Theme
   static ThemeData get lightTheme {
@@ -35,73 +47,76 @@ class AppTheme {
         background: backgroundColor,
       ),
 
-      // Text Themes
+      // Text Themes (Using Inter font like portal)
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.roboto(
+        displayLarge: GoogleFonts.inter(
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: textPrimary,
         ),
-        displayMedium: GoogleFonts.roboto(
+        displayMedium: GoogleFonts.inter(
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: textPrimary,
         ),
-        displaySmall: GoogleFonts.roboto(
+        displaySmall: GoogleFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: textPrimary,
         ),
-        headlineMedium: GoogleFonts.roboto(
+        headlineMedium: GoogleFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
-        headlineSmall: GoogleFonts.roboto(
+        headlineSmall: GoogleFonts.inter(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
-        titleLarge: GoogleFonts.roboto(
+        titleLarge: GoogleFonts.inter(
           fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
+        ),
+        titleMedium: GoogleFonts.inter(
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        titleMedium: GoogleFonts.roboto(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: textPrimary,
-        ),
-        titleSmall: GoogleFonts.roboto(
+        titleSmall: GoogleFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: textSecondary,
         ),
-        bodyLarge: GoogleFonts.roboto(
+        bodyLarge: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
-        bodyMedium: GoogleFonts.roboto(
+        bodyMedium: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: textPrimary,
         ),
-        bodySmall: GoogleFonts.roboto(
+        bodySmall: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: textSecondary,
         ),
       ),
 
-      // App Bar Theme
+      // App Bar Theme (Gradient primary like portal)
       appBarTheme: AppBarTheme(
         elevation: 0,
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
-        titleTextStyle: GoogleFonts.roboto(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+        iconTheme: const IconThemeData(
           color: Colors.white,
         ),
       ),
@@ -111,13 +126,16 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.roboto(
+          elevation: 2,
+          shadowColor: primaryColor.withOpacity(0.3),
+          textStyle: GoogleFonts.inter(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -125,14 +143,14 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
-          side: const BorderSide(color: primaryColor),
-          textStyle: GoogleFonts.roboto(
+          side: BorderSide(color: primaryColor, width: 2),
+          textStyle: GoogleFonts.inter(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -140,42 +158,44 @@ class AppTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: slate50,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: slate200, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: slate200, width: 2),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: dangerColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: dangerColor, width: 2),
         ),
-        labelStyle: GoogleFonts.roboto(
-          color: textSecondary,
+        labelStyle: GoogleFonts.inter(
+          color: slate700,
           fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
-        hintStyle: GoogleFonts.roboto(
-          color: textTertiary,
+        hintStyle: GoogleFonts.inter(
+          color: slate300,
           fontSize: 14,
         ),
       ),
 
       // Card Theme
       cardTheme: CardTheme(
-        elevation: 0,
+        elevation: 1,
         color: surfaceColor,
+        shadowColor: slate900.withOpacity(0.05),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: slate200),
         ),
       ),
 

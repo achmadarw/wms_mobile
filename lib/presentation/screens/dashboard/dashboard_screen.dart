@@ -16,6 +16,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -67,16 +69,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return true; // Return true to prevent default behavior
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC), // slate-50
         appBar: AppBar(
-          title: const Text('Dashboard'),
+          backgroundColor: Colors.white,
           elevation: 0,
+          title: Text(
+            'Dashboard',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: const Color(0xFF0F172A), // slate-900
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(
+              height: 1,
+              color: const Color(0xFFE2E8F0), // slate-200
+            ),
+          ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
+              icon: const Icon(Icons.notifications_outlined,
+                  color: Color(0xFF475569)),
               onPressed: () {},
             ),
             IconButton(
-              icon: const Icon(Icons.person_outline),
+              icon: const Icon(Icons.person_outline, color: Color(0xFF475569)),
               onPressed: () {
                 _showProfileMenu(context);
               },
@@ -104,10 +122,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   _buildQuickStats(inventoryState, warehouseState, theme),
                   const SizedBox(height: 24),
 
-                  // Quick Actions
-                  _buildQuickActions(context, theme),
-                  const SizedBox(height: 24),
-
                   // Recent Items
                   _buildRecentItems(inventoryState, theme),
                 ],
@@ -115,53 +129,102 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
+        bottomNavigationBar: _buildBottomNavigation(context, theme),
       ),
     );
   }
 
   Widget _buildGreetingCard(UserModel? user, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.7),
+            Color(0xFF4F46E5), // indigo-600
+            Color(0xFF4338CA), // indigo-700
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4F46E5).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Welcome back,',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.waving_hand,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back,',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user?.fullName ?? 'User',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            user?.fullName ?? 'User',
-            style: theme.textTheme.displaySmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              user?.role ?? 'User',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: Colors.white,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
               ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.shield_outlined,
+                  size: 16,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  user?.role ?? 'User',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -179,44 +242,54 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       children: [
         Text(
           'Quick Stats',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF0F172A), // slate-900
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.3,
           children: [
             _buildStatCard(
               icon: Icons.inventory_2,
               title: 'Total Items',
               value: '${inventoryState.items.length}',
-              color: Colors.blue,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F46E5), Color(0xFF4338CA)], // indigo
+              ),
               theme: theme,
             ),
             _buildStatCard(
               icon: Icons.warehouse,
               title: 'Warehouses',
               value: '${warehouseState.warehouses.length}',
-              color: Colors.green,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF059669), Color(0xFF047857)], // emerald
+              ),
               theme: theme,
             ),
             _buildStatCard(
               icon: Icons.layers,
               title: 'Total Bins',
               value: '${warehouseState.bins.length}',
-              color: Colors.orange,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFD97706), Color(0xFFB45309)], // amber
+              ),
               theme: theme,
             ),
             _buildStatCard(
               icon: Icons.trending_up,
               title: 'Stock Value',
               value: '\$0.00',
-              color: Colors.purple,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)], // violet
+              ),
               theme: theme,
             ),
           ],
@@ -229,134 +302,159 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required IconData icon,
     required String title,
     required String value,
-    required Color color,
+    required Gradient gradient,
     required ThemeData theme,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0), // slate-200
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: theme.textTheme.labelSmall,
-            textAlign: TextAlign.center,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A), // slate-900
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF64748B), // slate-500
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+  Widget _buildBottomNavigation(BuildContext context, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                icon: Icons.home,
+                label: 'Home',
+                isSelected: _selectedIndex == 0,
+                onTap: () => setState(() => _selectedIndex = 0),
+              ),
+              _buildNavItem(
+                icon: Icons.add_circle_outline,
+                label: 'New Item',
+                isSelected: _selectedIndex == 1,
+                onTap: () async {
+                  setState(() => _selectedIndex = 1);
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddItemScreen()),
+                  );
+                  if (result == true && mounted) {
+                    ref.read(inventoryProvider.notifier).fetchItems();
+                  }
+                  setState(() => _selectedIndex = 0);
+                },
+              ),
+              _buildNavItem(
+                icon: Icons.local_shipping_outlined,
+                label: 'Movements',
+                isSelected: _selectedIndex == 2,
+                onTap: () {
+                  setState(() => _selectedIndex = 2);
+                  context.go('/movements');
+                },
+              ),
+              _buildNavItem(
+                icon: Icons.qr_code_scanner,
+                label: 'Scan',
+                isSelected: _selectedIndex == 3,
+                onTap: () => setState(() => _selectedIndex = 3),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          children: [
-            _buildActionButton(
-              icon: Icons.add_circle_outline,
-              title: 'New Item',
-              color: Colors.blue,
-              onTap: () async {
-                print('\n================================================');
-                print(
-                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | New Item button tapped');
-                print(
-                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | Navigating to AddItemScreen');
-
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AddItemScreen()),
-                );
-
-                print(
-                    '[WMS-UI-DASHBOARD] ${DateTime.now()} | Returned with result: $result');
-
-                if (result == true && mounted) {
-                  print(
-                      '[WMS-UI-DASHBOARD] ${DateTime.now()} | Refreshing inventory list');
-                  ref.read(inventoryProvider.notifier).fetchItems();
-                  print(
-                      '[WMS-UI-DASHBOARD] ${DateTime.now()} | SUCCESS - Inventory list refreshed');
-                }
-                print('================================================\n');
-              },
-            ),
-            _buildActionButton(
-              icon: Icons.exit_to_app,
-              title: 'Outbound',
-              color: Colors.green,
-              onTap: () => context.go('/movements'),
-            ),
-            _buildActionButton(
-              icon: Icons.input,
-              title: 'Inbound',
-              color: Colors.orange,
-              onTap: () => context.go('/movements'),
-            ),
-            _buildActionButton(
-              icon: Icons.qr_code_2,
-              title: 'Scan Item',
-              color: Colors.purple,
-              onTap: () {},
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildNavItem({
     required IconData icon,
-    required String title,
-    required Color color,
+    required String label,
+    required bool isSelected,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF4F46E5), Color(0xFF4338CA)],
+                )
+              : null,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+              size: 24,
+            ),
+            const SizedBox(height: 4),
             Text(
-              title,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -373,17 +471,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             Text(
               'Recent Items',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A), // slate-900
               ),
             ),
             TextButton(
               onPressed: () => context.go('/inventory'),
-              child: const Text('View All'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF4F46E5), // indigo-600
+              ),
+              child: const Text(
+                'View All',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (inventoryState.isLoading)
           const Center(child: CircularProgressIndicator())
         else if (inventoryState.items.isEmpty)
@@ -403,30 +508,57 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             itemBuilder: (context, index) {
               final item = inventoryState.items[index];
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: theme.dividerColor,
+                    color: const Color(0xFFE2E8F0), // slate-200
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC), // slate-50
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0), // slate-200
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.inventory_2,
+                        color: Color(0xFF4F46E5), // indigo-600
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             item.name,
-                            style: theme.textTheme.labelMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A), // slate-900
+                            ),
                           ),
+                          const SizedBox(height: 4),
                           Text(
                             'SKU: ${item.sku}',
-                            style: theme.textTheme.labelSmall,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF64748B), // slate-500
+                            ),
                           ),
                         ],
                       ),
